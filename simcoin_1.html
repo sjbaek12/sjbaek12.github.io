@@ -36,7 +36,7 @@
 
   <li>수신자 주소 : <input id="receiverAddr" type="text"></li>
 
-  <li>신규 발행액 : <input id="NewCurrnecy" type="text"></li>
+  <li>신규 발행액 : <input id="NewCurrency" type="text"></li>
 
   <li>컨트랙트에 저장된 값: <span id="storedData"></span>
 
@@ -163,8 +163,8 @@ function setValue() {
 
 
 
-  var receiverAcc = document.getElementById('receiverAddr').value;
-  var newCur = document.getElementById('NewCurrnecy').value;
+  var receiverAcc = document.getElementById("receiverAddr").address;
+  var newCur = document.getElementById("NewCurrency").value;
   var txid
 
   simplecoin.mint(receiverAcc, newCur, function(e,r){
