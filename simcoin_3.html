@@ -69,7 +69,7 @@
 
 <script>
 
-var contractAddress = '0x5cac4a6beee1e3b6e80130986173c3c18aa80adc';
+var contractAddress = '0x6beadd7e6a3dfccec4e9fb41ab3fe4338bd037bbc';
 
 var abi = [{"constant":true,"inputs":[],"name":"minter","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"send","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"Sent","type":"event"}];
 
@@ -138,7 +138,7 @@ function getValue() {
 
     simcoin.balances.call(receiverAcc, function(e,r){
 
-      if (receiverAcc == Minteraddress) {
+      if (receiverAcc == Minteraddress) {alert("화폐발행자");}
 
       document.getElementById('storedcurrency').innerHTML= 0}
 
