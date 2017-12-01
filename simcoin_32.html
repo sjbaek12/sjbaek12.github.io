@@ -10,7 +10,7 @@
 
   <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.2.3/milligram.min.css">
 
-  <title>Simple Coin Dapp 예제 0.2</title>
+  <title>Simple Coin Dapp 예제 0.3</title>
 
   <style>
 
@@ -132,7 +132,6 @@ function startApp() {
 
 
 
-  getValue();
 
 }
 
@@ -212,7 +211,7 @@ function setValue() {
 
   var Moneytrans = document.getElementById("MoneyTransfer").value;
 
-  simcoin.send(receiverAcc, Moneytrans, function(e,r){console.log(r);});
+  simcoin.send(receiverAcc, Moneytrans, function(e,r){});
 
   }
 
