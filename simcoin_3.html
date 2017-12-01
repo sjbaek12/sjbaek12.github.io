@@ -26,13 +26,13 @@
 
 <body>
 
-<h3>Coin 발행 및 이체</h3>
+<h3>Coin 발행 및 이체 0.1</h3>
 
 <ul>
 
   <li>컨트랙트 주소: <span id="contractAddr"></span></li>
 
-  <li>발행자 주소: <span id="MinterAddr"></span></li> 
+  <li>발행자 주소: <span id="MinterAddr"></span></li>
 
   <li>내 어카운트 주소: <span id="MyaccountAddr"></span></li>
 
@@ -46,11 +46,11 @@
 
  <li> 송금 금액 : <input id="MoneyTransfer" type="text" style=width:500px;>
 
-      <button onclick="putValue()">송금확인</button></li> 
+      <button onclick="putValue()">송금확인</button></li>
 
  <li>나 의  잔 고: <span id="Mybalance"></span>
 
-    <button onclick="MyValue()">내 잔고 확인</button> </li> 
+    <button onclick="MyValue()">내 잔고 확인</button> </li>
 
   <li>수신자 잔고: <span id="storedcurrency"></span>
 
@@ -211,7 +211,7 @@ function setValue() {
   var receiverAcc = document.getElementById("receiverAddr").innerHTML;
 
   var Moneytrans = document.getElementById("MoneyTransfer").value;
- 
+
   simcoin.send(receiverAcc, Moneytrans, function(e,r){console.log(r);});
 
   }
@@ -219,7 +219,7 @@ function setValue() {
 
 
   function MyValue() {
-   
+
     var MyaccountAddress = document.getElementById('MyaccountAddr').innerHTML;
 
     simcoin.balances.call (MyaccountAddress,function(e,r){
