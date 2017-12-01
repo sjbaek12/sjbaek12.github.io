@@ -32,7 +32,9 @@
 
   <li>컨트랙트 주소: <span id="contractAddr"></span></li>
 
-  <li>내 어카운트 주소: <span id="accountAddr"></span></li>
+  <li>발행자 주소: <span id="MinterAddr"></span></li> 
+
+  <li>내 어카운트 주소: <span id="MyaccountAddr"></span></li>
 
   <li>수신자 주소 : <input id="receiverAddr" type="text" style=width:500px;></li>
 
@@ -75,6 +77,8 @@ var simcoincontract;
 
 var simcoin;
 
+var Minteraddress ="0x1b83f52a9a8055548421930f0706d705f2edf4f0";
+
 
 window.addEventListener('load', function() {
 
@@ -114,11 +118,14 @@ function startApp() {
 
   document.getElementById('contractAddr').innerHTML = getLink(contractAddress);
 
+  document.getElementById('MinterAddr').innerHTML = getLink(Minteraddress);
+
   web3.eth.getAccounts(function(e,r){
 
-    document.getElementById('accountAddr').innerHTML = getLink(r[0]);
+    document.getElementById('MyaccountAddr').innerHTML = getLink(r[0]);
 
   });
+
 
 
   getValue();
@@ -130,6 +137,10 @@ function getValue() {
     var receiverAcc = document.getElementById("receiverAddr").innerHTML;
 
     simcoin.balances.call(receiverAcc, function(e,r){
+
+      if (receiverAcc == Minteraddress) {
+
+      document.getElementById('storedcurrency').innerHTML= 0}
 
     document.getElementById('storedcurrency').innerHTML=r.toNumber()
 
