@@ -26,7 +26,7 @@
 
 <body>
 
-<h3>Simple Coin dApp 예제</h3>
+<h3>Coin 발행 및 이체</h3>
 
 <ul>
 
@@ -44,9 +44,13 @@
 
       <div id="result"></div></li>
 
-  <li>이 체  금 액: <span id="MoneyTransfer"></span>
+ <li> 송금 금액 : <input id="MoneyTransfer" type="text" style=width:500px;>
 
-    <button onclick="putValue()">이체확인</button> </li> 
+      <button onclick="putValue()">송금확인</button></li> 
+
+ <li>나 의  잔 고: <span id="Mybalance"></span>
+
+    <button onclick="MyValue()">내 잔고 확인</button> </li> 
 
   <li>수신자 잔고: <span id="storedcurrency"></span>
 
@@ -199,6 +203,38 @@ function setValue() {
    });
 
  });
+
+
+  function putValue() {
+
+
+  var receiverAcc = document.getElementById("receiverAddr").innerHTML;
+
+  var Moneytrans = document.getElementById("MoneyTransfer").value;
+ 
+  simcoin.send(receiverAcc, Moneytrans, function(e,r){console.log(r);});
+
+  }
+
+
+
+  function MyValue() {
+   
+    var MyaccountAddress = document.getElementById('MyaccountAddr').innerHTML;
+
+    simcoin.balances.call (MyaccountAddress,function(e,r){
+
+    document.getElementById('Mybalance').innerHTML=r.toNumber()
+
+    });}
+
+
+
+
+
+
+
+
 
 }
 
