@@ -71,13 +71,13 @@
 
 var contractAddress = '0x6beadd7e6a3dfccec4e9fb41ab3fe4338bd037bbc';
 
+var MinterAddress = '0x1b83f52a9a8055548421930f0706d705f2edf4f0';
+
 var abi = [{"constant":true,"inputs":[],"name":"minter","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"send","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"Sent","type":"event"}];
 
 var simcoincontract;
 
 var simcoin;
-
-var Minteraddress ="0x1b83f52a9a8055548421930f0706d705f2edf4f0";
 
 
 window.addEventListener('load', function() {
@@ -118,7 +118,7 @@ function startApp() {
 
   document.getElementById('contractAddr').innerHTML = getLink(contractAddress);
 
-  document.getElementById('MinterAddr').innerHTML = getLink(Minteraddress);
+  document.getElementById('MinterAddr').innerHTML = getLink(MinterAddress);
 
   web3.eth.getAccounts(function(e,r){
 
@@ -137,10 +137,6 @@ function getValue() {
     var receiverAcc = document.getElementById("receiverAddr").innerHTML;
 
     simcoin.balances.call(receiverAcc, function(e,r){
-
-      if (receiverAcc == Minteraddress) {alert("화폐발행자");}
-
-      document.getElementById('storedcurrency').innerHTML= 0}
 
     document.getElementById('storedcurrency').innerHTML=r.toNumber()
 
