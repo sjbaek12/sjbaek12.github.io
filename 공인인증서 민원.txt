@@ -1,0 +1,79 @@
+
+°øÀÎÀÎÁõ¼­ ¹Î¿ø
+
+https://search.naver.com/search.naver?where=kin&kin_display=10&qt=&title=0&&answer=0&grade=0&choice=0&sec=0&nso=so%3Ar%2Ca%3Aall%2Cp%3Aall&query=%EA%B3%B5%EC%9D%B8%EC%9D%B8%EC%A6%9D%EC%84%9C+%EB%AF%BC%EC%9B%90&c_id=&c_name=&sm=tab_pge&kin_start=11
+
+
+library(tm)
+library(rvest)
+library(KoNLP)
+library(stringr)
+
+basic_url <- "https://search.naver.com/search.naver?where=kin&kin_display=10&qt=&title=0&&answer=0&grade=0&choice=0&sec=0&nso=so%3Ar%2Ca%3Aall%2Cp%3Aall&query=%EA%B3%B5%EC%9D%B8%EC%9D%B8%EC%A6%9D%EC%84%9C+%EB%AF%BC%EC%9B%90&c_id=&c_name=&sm=tab_pge&kin_start="
+
+urls <- NULL
+
+for(x in 0:10){
+   y <- (x*10)+1
+   urls[x+1] <- paste0(basic_url,y)
+   }
+
+links <- NULL
+
+for(url in urls) { html <- read_html(url)
+  html2 <- html_nodes(html, '.type01')
+  html3 <- html_nodes(html2, 'a')
+  html4 <- html_attr(html3, 'href')
+  links <- c(links, html4)}
+
+
+links <- unique(links)
+
+txt <- NULL
+
+for(link in links){
+    html <- read_html(link)
+    html1 <- html_nodes(html, '.c-heading')
+    a <- html_text(html1)
+    txt <- c(txt, a)} 
+
+write.csv(txt, "°øÀÎÀÎÁõ ¹Î¿ø.txt")
+
+setwd("C:/Users/07941/Documents/certi")
+
+for(i in seq_along(txt)){write.csv(txt[i], paste0(i, "certi.txt"))}
+
+plans <- VCorpus(DirSource("C:/users/07941/Documents/certi", pattern="txt")) 
+
+for(i in seq_along(plans)){
+  plans[[i]]$content <- paste(plans[[i]]$content, collapse=" ")}
+
+plans <- tm_map(plans, removePunctuation)
+
+plans = tm_map(plans, stripWhitespace)
+
+for(i in seq_along(plans)){
+  plans[[i]]$content <- gsub("UA", "", plans[[i]]$content)}
+
+for(plan in plans){plan <- gsub("[[:punct:]]", "", plan)}
+
+
+####### ÀÌºÎºĞÀº ¿ø½Ã Data Ãâ·Â¿ë #######
+
+plans_txt <- NULL
+
+for(i in seq_along(plans)){pt <- plans[[i]]$content
+plans_txt <- c(plans_txt, pt)}
+
+setwd("C:/Users/07941/Documents")
+write.csv(plans_txt, "°øÀÎÀÎÁõ ¹Î¿ø.txt")
+
+###########################################
+
+for (i in seq_along(plans)){
+pos <- SimplePos09(plans[[i]]$content)
+pos_np <- str_match(pos,'([A-Z°¡-ÆR]+)/[NP]')
+pos_np <- paste(pos_np[,2], "")
+plans[[i]]$content <- pos_np}
+
+ 

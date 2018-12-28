@@ -1,0 +1,17 @@
+
+가트너 로그인
+
+library(RSelenium)
+library(rvest)
+library(tm)
+library(httr)
+
+
+ 
+remDr$navigate("https://www.gartner.com/login/loginInitAction.do?method=initialize&login=mkhdr&TARGET=https%3A%2F%2Fwww.gartner.com%2Fen") 
+id <- remDr$findElement(using='xpath', value = '//*[@id="username"]')
+pw <- remDr$findElement(using='xpath', value = '//*[@id="password"]')
+id$sendKeysToElement(list("back.jiseung@sk.com"))
+pw$sendKeysToElement(list("BACKjs*0321"))
+puu <- remDr$findElement(using='xpath', value = '//*[@id="gLogin"]/input[9]')
+puu$clickElement()

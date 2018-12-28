@@ -1,0 +1,61 @@
+library(tm)
+library(KoNLP)
+
+docs <- 
+    c("사랑은 달콤한 꽃이나 그것을 따기 위해서는 무서운 벼랑 끝까지 갈 용기가 있어야 한다.", 
+    "진실한 사랑의 실체는 믿음이다.",
+    "눈물은 눈동자로 말하는 고결한 언어.",
+    "친구란 두 사람의 신체에 사는 하나의 영혼이다.",
+    "흐르는 강물을 잡을수 없다면, 바다가 되어서 기다려라.",
+    "믿음 소망 사랑 그중에 제일은 사랑이라.",
+    "가장 소중한 사람은 가장 사랑하는 사람이다.",
+    "사랑 사랑 사랑")
+
+
+query <- "믿음을 주는 사랑"
+
+## docs는 8개 리스트를 가직 있고 아래는 "doc1" 부터 "doc8"까지 리스트를 만들고, 이를
+names() 함수로 data.frame의 변수명으로 넣는 것이다.
+
+paste("doc", 1:length(docs), sep="")
+names(docs) <- paste("doc", 1:length(docs), sep="")
+
+# docs 문서에 query 문장을 붙힌다.
+
+docs <- c(docs, query=query)
+
+
+## tm 패키지가 처리 가능한 형태로 말뭉치 (corpus)를 만든다.
+
+docs.corp <- Corpus(VectorSource(docs))
+
+
+## 색인어 추출함수를 만든다. 아래의 단어구분을 위한 tokenize에 사전에 있는 명사 단위로
+추출하고 출현횟수 가중치는 tfidf로 하라는 의미인것 같음
+
+konlp_tokenizer <- function(doc){
+  extractNoun(doc)
+}
+
+tdmat <- TermDocumentMatrix(docs.corp, control=list(tokenize=konlp_tokenizer,
+ weighting = function(x) weightTfIdf(x, TRUE),wordLengths=c(1,Inf)))
+
+
+tdmatmat <- as.matrix(tdmat)
+
+## 메트릭스 자료 형태로 전환한 이후에 열을 기준으로 Apply 함수를 사용하여 Normalize 한다.
+apply 함수에서 2는 열을 의미하고, 1은 행을 의미한다.
+
+norm_vec <- function(x) {x/sqrt(sum(x^2))}
+tdmatmat <- apply(tdmatmat, 2, norm_vec)
+
+
+## %*% 는 행렬 곱의 연산자 이다. 9번째 열, 즉 쿼리에 나타난 단어와 각 doc에 나타난 단어의
+출현 횟수를 곱해서 각 문서가 얼만나 쿼리와 비슷한지 찾는다.
+
+docord <- t(tdmatmat[,9]) %*% tdmatmat[,1:8]
+
+
+### 검색결과를 리스팅 한다.
+orders <- data.frame(docs=docs[-9],scores=t(docord) ,stringsAsFactors=FALSE)
+orders[order(docord, decreasing=T),]
