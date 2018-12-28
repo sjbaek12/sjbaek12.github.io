@@ -1,0 +1,122 @@
+Ç°»ç ÃßÃâ
+
+library(rJava)
+library(KoNLP)
+library(rvest)
+library(stringr)     
+
+## stringr´Â str_match() ¸¦ °¡µ¿½ÃÅ´
+
+txt <- "¿ì¸®´Â ¸Å¿ì ±æ°í ÃäÁö¸¸ ¹à°í Áñ°Å¿î °Ü¿ïÀÎ winter ½ÃÁðÀ» º¸³»°í ÀÖ´Ù"
+
+words.pa <- function(doc)
+{
+  doc <- as.character(doc)
+  doc2 <- paste(SimplePos22(doc))
+  doc3 <- str_match(doc2, "([°¡-ÆR]+)/(PA)")
+  doc4 <- doc3[,2]
+  doc4[!is.na(doc4)]
+}
+
+## Çü¿ë»ç¸¦ ÃßÃâÇÑ´Ù
+doc.pa <- words.pa(txt)
+
+
+ "±æ"   "Ãä"   "¹à"   "Áñ°Ì"
+
+words.nc <- function(doc)
+{
+  doc <- as.character(doc)
+  doc2 <- paste(SimplePos22(doc))
+  doc3 <- str_match(doc2, "([°¡-ÆR]+)/(NC)")
+  doc4 <- doc3[,2]
+  doc4[!is.na(doc4)]
+}
+
+## ¸í»ç¸¦ ÃßÃâÇÑ´Ù.
+doc.nc <- words.nc(txt)
+
+
+words.pv <- function(doc)
+{
+  doc <- as.character(doc)
+  doc2 <- paste(SimplePos22(doc))
+  doc3 <- str_match(doc2, "([°¡-ÆR]+)/(PV)")
+  doc4 <- doc3[,2]
+  doc4[!is.na(doc4)]
+}
+
+## µ¿»ç¸¦ ÃßÃâÇÑ´Ù.
+doc.pv <- words.pv(txt)
+
+doc.nc=unique(doc.nc)
+doc.pa=unique(doc.pa)
+doc.pv=unique(doc.pv)
+
+
+### ÆÄÀÌ·Î ÀúÀå 
+
+doc.pa.df=as.data.frame(doc.pa)
+write.csv(doc.pa.df,"senti/doc.pa.txt")
+
+read.csv(file.choose()) ## ÆÄÀÏÀ» ºÎ¸¦¶§
+
+
+
+
+#### °¨Á¤»çÀü ¸¸µé±â #####
+
+positive <- "Áñ°Ì°Ô ±â»Ú°Ô ½Å³ª°Ô Èï°ã°Ô ¸¸Á·½º·¯¿î ÀÚ¶û½º·¯¿î"
+negative <- "°ïÈ¤½º·¯¿î, ³­Ã³ÇÑ, ´çÈ¤½º·¯¿î, °íÅë½º·¯¿î, ºñÂüÇÑ, ÂòÂòÇÑ, È­³ª´Â" 
+
+pos.pa <-words.pa(positive)
+pos.pv <- words.pv(positive)
+pos.nc <- world.nc(positive)
+pos <- c(pos.pa, pos.pv, pos.nc)
+
+## posÀÇ ¿ø¼Ò´Â ¾Æ·¡¿Í °°À½
+"Áñ°Ì"     "±â»Ú"     "Èï°ã"     "½Å³ª"     "¸¸Á·"     "ÀÚ¶û½º·¯" "¿î" 
+
+## ¿©±â¼­ ¸¶Áö¸· "¿î"À» Á¦°ÅÇÏ°í data.frameÀ¸·Î Á¤ÀÇ
+pos <- pos[-7]
+pos_df <- data.frame(pos)
+
+## ¿¬»êÀ» À§ÇØ¼­ º¤ÅÍ·Î ÀüÈ¯ÇÑ´Ù.
+pos_mind <- as.matrix(pos_df)
+
+voc <- "³­Ã³ÇÑ ÀÏµµ ÀÖ¾úÁö¸¸ Áñ°Ì°í ½Å³ª´Â ÀÏÀÌ¾ú´Ù"
+voc.pa <- words.pa(voc)
+voc.pv <- words.pv(voc)
+voc.nc <- words.nc(voc)
+voc <- c(voc.pa, voc.pv, voc.nc)   ## voc¸¦ ÇüÅÂ¼Ò·Î ÀüÈ¯ÇÏ¿´´Ù.
+voc_mind <- as.matrix(voc)
+pos.num <- match(voc_mind,pos_mind)  ## »çÀü°ú VOC ÇàÅÂ¼Ò¸¦ ¸ÅÄªÇÑ´Ù.
+pos.matches <- !is.na(pos.num)  ## ¸ÅÄª ¿©ºÎ¸¦ T, F·Î º¯È¯ÇÏ°í  
+pos.sum=sum(pos.matches) ## ±àÁ¤ÀûÀÎ ÇüÅÂ¼ÒÀÇ ÃâÇöÈ½¼ö¸¦ Ä«¿îÆ® ÇÑ´Ù.
+
+
+neg.pa <-words.pa(negative)
+neg.pv <- words.pv(negative)
+neg.nc <- words.nc(negative)
+neg <- c(neg.pa, neg.pv, neg.nc)
+neg <- neg[-1]
+neg_df <- data.frame(neg)
+neg_mind <- as.matrix(neg_df)
+neg.num <- match(voc_mind,neg_mind)  ## »çÀü°ú VOC ÇàÅÂ¼Ò¸¦ ¸ÅÄªÇÑ´Ù.
+neg.matches <- !is.na(neg.num)  ## ¸ÅÄª ¿©ºÎ¸¦ T, F·Î º¯È¯ÇÏ°í  
+neg.sum=sum(neg.matches) ## ±àÁ¤ÀûÀÎ ÇüÅÂ¼ÒÀÇ ÃâÇöÈ½¼ö¸¦ Ä«¿îÆ® ÇÑ´Ù.
+
+emo.score <- pos.sum - neg.sum
+
+
+## sigmoid ÇÔ¼ö ÇüÅÂ·Î Ç¥Çö
+
+sigmoid <- function(x){
+    1/(1+exp(-x))
+ }
+  
+x=seq(from=-5,to=5,by=0.1)
+plot(x,sigmoid(x),col="red")
+
+
+----------------------------------------

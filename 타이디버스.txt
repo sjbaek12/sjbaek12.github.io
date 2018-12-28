@@ -1,0 +1,166 @@
+tidyverse È°¿ë
+ÀÚ·á´Â moom.txtÀÌ´Ù. Âü°í½ÎÀÌÆ®´Â https://kuduz.tistory.com/1090 ÀÌ´Ù.
+
+library('tidyverse')
+read_lines('moon.txt)
+library('KoNLP')
+m <- read_lines('moon.txt')
+head(m, 1)
+tail(m, 1)
+
+# ÇüÅÂ¼Ò ¸®½ºÆ®¸¦ ¸¸µç´Ù.
+¤Ñ <- 
+mp <- SimplePos09(m)
+
+
+mp %>% class()  # class, Áï list¶ó´Â °ÍÀ» ¾Ë·ÁÁØ´Ù.
+
+
+library('reshape2')
+
+m_df <- mp %>% melt %>% as_tibble  ## tibbleÀº tidyverse¿¡¼­ °¡Àå¸¹ÀÌ »ç¿ëÇÏ´Â data.frameÀÌ´Ù.
+
+m_df <- m_df[, c(3, 1)] ## Ã¹¹øÂ° ÄÃ·³À» ¶óÀÎ, µÎ¹øÂ° ÁÙÀ» ÇüÅÂ¼Ò·Î ¸¸µç´Ù.
+
+## mutate´Â ¿­Ãß°¡ ÇÔ¼ö, Áï, noun ¿­À» Ãß°¡ÇÑ´Ù.
+## [°¡-ÆR]+ ´Â ¾îÀý ´ÜÀ§·Î ÃßÃâ
+
+m_df %>% mutate(noun=str_match(value, '([°¡-ÆR]+)/N')[,2]) ## value´Â m_dfÀÇ frame °ªÀÌ´Ù.
+
+## Ãâ·Â°ª ¿¹½Ã
+
+      L1 value        noun  
+   <int> <fct>        <chr> 
+ 1     1 ºÏ³è/N       ºÏ³è  
+ 2     1 µ¿Æ÷/N       µ¿Æ÷  
+ 3     1 ¿©·¯ºÐ/N+,/S ¿©·¯ºÐ
+ 4     1 ³²³è/N+ÀÇ/J  ³²³è  
+ 5     1 ±¹¹Î/N       ±¹¹Î  
+ 6     1 ¿©·¯ºÐ/N+,/S ¿©·¯ºÐ
+ 7     1 ÇØ¿Ü/N       ÇØ¿Ü  
+ 8     1 µ¿Æ÷/N       µ¿Æ÷  
+ 9     1 ¿©·¯ºÐ/N+,/S ¿©·¯ºÐ
+10     1 ÀüÀï/N       ÀüÀï
+
+
+## wordcloud¸¦ ¸¸µç´Ù.
+
+library('wordcloud2')
+
+m_df %>% mutate(noun=str_match(value, '([°¡-ÆR]+)/N')[,2]) %>% na.omit %>% filter(str_length(noun)>=2) %>% count(noun, sort=TRUE) %>% wordcloud2()
+
+
+
+## m_df2¿¡ ¸í»ç ÄÃ·³À» ¼±ÅÃÇØ¼­ lead¶ó´Â ¿­À» ¸¸µå´Âµ¥, ÇÑ Ä­À» ¿Ã·Á¼­ ¸¸µç´Ù.
+   ¹ÙÀÌ±×·¥À» ¸¸µé±â À§ÇÑ ÀÛ¾÷ÀÌ´Ù.¾Õ¼­ ¸í»ç Áï Ã¼¾ð(¸í»ç, ´ë¸í»ç, ¼ö»ç)¸¸ ¹ÙÀÌ±×·¥À¸·Î ¸¸µå´Â °ÍÀÌ´Ù.
+
+m_df2 <- m_df %>% mutate(noun=str_match(value, '([°¡-ÆR]+)/N')[,2]) %>% na.omit %>% filter(str_length(noun)>=2) %>% select(3, 1)
+
+
+m_df2 %>% select(noun) %>% mutate(lead=lead(noun))
+
+## data.frame¿¡ ÀÖ´Â µÎ°³ÀÇ ¸í»çÄÃ·³À» ÇÏ³ª·Î ¹­°í, bigramÀ¸·Î ÀÌ¸§À» ºÙÈù´Ù. 
+
+m_df2 %>% na.omit() %>% select(noun) %>% mutate(lead=lead(noun)) %>% unite(bigram, c(noun, lead), sep=' ') 
+
+
+bigram_df <- m_df2 %>% na.omit() %>% select(noun) %>% mutate(lead=lead(noun)) %>% unite(bigram, c(noun, lead), sep=" ") %>% count(bigram, sort=TRUE) %>% head(19) %>% separate(bigram, c('word1', 'word2'))
+
+bigram_df <- bigram_df[-15,] ## ¹«ÀÇ¹Ì ¹ÙÀÌ±×·¥ »èÁ¦
+
+
+
+
+## ¹ÙÀÌ±×·¥À» ±×·¡ÇÈÀ¸·Î Ç¥ÇöÇÑ´Ù.
+
+library('tidygraph') 
+library('ggraph')
+bigram_df %>% as_tbl_graph %>% ggraph() + geom_edge_link(aes(start_cap = label_rect(node1.name), end_cap = label_rect(node2.name))) + geom_node_text(aes(label=name))
+
+
+###### Âü°í #######
+
+1) Ã¼¾ð
+
+  ¸í»ç, ´ë¸í»ç, ¼ö»ç ¼¼ Ç°»ç¸¦ ¹­¾î Ã¼¾ðÀÌ¶ó ºÎ¸¨´Ï´Ù.
+
+  ¿¹) »ç¶÷, ÇÐ±³, ÃÊµîÇÐ±³(ÀÌ»ó ¸í»ç), ³ª, ³Ê, ÀÌ°Í(ÀÌ»ó ´ë¸í»ç), ÇÏ³ª, µÑÂ°(ÀÌ»ó ¼ö»ç) µî
+
+ 
+
+2) ¿ë¾ð
+
+  µ¿»ç, Çü¿ë»ç µÎ Ç°»ç¸¦ ¹­¾î ¿ë¾ðÀÌ¶ó ºÎ¸¨´Ï´Ù.
+
+  ¿¹) ¸Ô´Ù, ´Þ¸®´Ù(ÀÌ»ó µ¿»ç), ¿¹»Ú´Ù, ÂøÇÏ´Ù(ÀÌ»ó Çü¿ë»ç) µî
+
+ 
+
+3) ÇüÅÂ¼Ò
+
+  ÀÇ¹Ì¸¦ °¡Áø ÃÖ¼Ò ´ÜÀ§ÀÔ´Ï´Ù.
+
+  '»ç¶÷', '³ª', 'ÇÏ³ª'¿Í °°Àº ¸»µéÀº ´õ ÀÌ»ó ÂÉ°³ÁöÁö ¾Ê½À´Ï´Ù. '»ç¶÷'À¸·Î¼­ ¿ÂÀüÇÑ ÀÇ¹Ì¸¦ °¡Áø ´ÜÀ§°¡ µÇÁö¿ä. ±×·±µ¥ 'ÃÊµîÇÐ±³' °°Àº °æ¿ì´Â ´Ù¸¨´Ï´Ù. ±×°ÍÀº ÇÕ¼º¾î·Î¼­ 'ÃÊµî'°ú 'ÇÐ±³'·Î ´Ù½Ã ºÐ¸®µË´Ï´Ù. ±×·¯¹Ç·Î 'ÃÊµî'°ú 'ÇÐ±³'°¡ ÇüÅÂ¼Ò°¡ µË´Ï´Ù.
+
+  ¿ë¾ðÀÇ °æ¿ìµµ ¸¶Âù°¡ÁöÀÔ´Ï´Ù. ¿ë¾ðÀº ¾î°£°ú ¾î¹Ì°¡ °¢°¢ÀÇ ÇüÅÂ¼Ò°¡ µË´Ï´Ù. ¶§·Î´Â ¼±¾î¸»¾î¹Ì±îÁö °áÇÕÇÏ±âµµ ÇÏÁö¿ä. '¸Ô´Ù'´Â '¸Ô-'°ú '-´Ù'°¡ °¢°¢ÀÇ ÇüÅÂ¼Ò¶ó´Â ÀÌ¾ß±âÀÔ´Ï´Ù. '¿¹»Ú´Ù'ÀÇ °æ¿ì´Â '¿¹»Ú-'¿Í '-´Ù'°¡ µÇ°ÚÁö¿ä. µÚ¿¡¼­ ´õ ¼³¸í µå¸®°Ú½À´Ï´Ù.
+
+ 
+
+4) Á¢»ç
+
+  µ¶¸³ÀûÀ¸·Î ¾²ÀÌÁö ¸øÇÏ°í, ´Ù¸¥ ¸»¿¡ ºÙ¾î »õ·Î¿î ´Ü¾î¸¦ ¸¸µå´Â ÇüÅÂ¼ÒÀÔ´Ï´Ù. ¾î¶² ¸»ÀÇ ¾Õ¿¡ ºÙ´Â Á¢»ç¸¦ Á¢µÎ»ç, µÚ¿¡ ºÙ´Â °ÍÀ» Á¢¹Ì»ç¶ó ÇÕ´Ï´Ù.
+
+  ¿¹) Ç²»ç°ú, ÇÞ°úÀÏ, Áö¿ì°³, Á¡ÀïÀÌ µî
+
+  À§ ¿¹¿¡¼­ 'Ç²'°ú 'ÇÞ'Àº Á¢µÎ»ç, '°³'¿Í 'ÀïÀÌ'´Â Á¢¹Ì»ç°¡ µË´Ï´Ù. ±×¸®°í Á¢»ç°¡ °áÇÕÇØ ÀÌ·ç¾îÁø ´Ü¾î¸¦ ÆÄ»ý¾î¶ó°í ºÎ¸¨´Ï´Ù.
+
+ 
+
+5) Á¢¹Ì»ç
+
+  À§¿¡¼­ ¼³¸í µå·È½À´Ï´Ù.
+
+ 
+
+6) ¾î±Ù
+
+  ´Ü¾î¿¡¼­ ½ÇÁúÁ÷ ÀÇ¹Ì¸¦ ³ªÅ¸³»´Â ºÎºÐÀ» ¾î±ÙÀÌ¶ó ÇÕ´Ï´Ù.
+
+  ´ÜÀÏ¾î(ÇÏ³ªÀÇ ÇüÅÂ¼Ò·Î ÀÌ·ç¾îÁø ´Ü¾î)¿¡¼­´Â ´Ü¾î ÀÚÃ¼°¡ ¾î±ÙÀÌ µË´Ï´Ù. Áï, »ç¶÷, ÇÐ±³, ³ª, ÇÏ³ª µîÀº ±× ÀÚÃ¼°¡ ÇÏ³ªÀÇ ´Ü¾îÀÌ¸é¼­ ÇÏ³ªÀÇ ¾î±ÙÀÔ´Ï´Ù.
+
+  µÑ ÀÌ»óÀÇ ÇüÅÂ¼Ò°¡ °áÇÕÇØ ÀÌ·ç¾îÁø ´Ü¾î¿¡¼­´Â ½ÇÁúÀû ÀÇ¹Ì¸¦ ³ªÅ¸³»´Â ºÎºÐÀÌ ¾î±ÙÀÌ µË´Ï´Ù. ÆÄ»ý¾î¿¡¼­´Â Á¢»ç¸¦ Á¦¿ÜÇÑ ºÎºÐÀÌ ¾î±ÙÀÌ µÇ°ÚÁö¿ä(Á¢»ç°¡ ÀÇ¹Ì¸¦ °®Áö ¾ÊÀº °ÍÀº ¾Æ´ÏÁö¸¸ ±×°ÍÀ» ½ÇÁúÀûÀÎ ÀÇ¹Ì·Î º¼ ¼ö´Â ¾ø½À´Ï´Ù). Áï, 'Ç²»ç°ú'¿¡¼­ÀÇ ¾î±ÙÀº '»ç°ú', 'Á¡ÀïÀÌ'¿¡¼­ÀÇ ¾î±ÙÀº 'Á¡'ÀÌ µË´Ï´Ù.
+
+  ÇÕ¼º¾îÀÇ °æ¿ì´Â °áÇÕµÈ ¸»ÀÌ ¸ðµÎ ¾î±ÙÀÌ µË´Ï´Ù. 'ÃÊµîÇÐ±³'¿¡¼­ º¸µíÀÌ 'ÃÊµî'°ú 'ÇÐ±³'´Â ¸ðµÎ ½ÇÁúÀûÀÎ ÀÇ¹Ì¸¦ °¡Áø ¾î±ÙÀÌ µÇ´Â °ÍÀÔ´Ï´Ù(ÀÌ ºÎºÐ »ç½Ç '¾î±â'¶ó°í ÇØ¾ß ´õ Á¤È®ÇÕ´Ï´Ù).
+
+  ¿ë¾ðÀÇ °æ¿ì ÁÖ·Î ¾î°£ÀÌ ¾î±ÙÀÌ µË´Ï´Ù(Ç×»ó ±×·¯ÇÑ °ÍÀº ¾Æ´Õ´Ï´Ù. ÀÌ ºÎºÐ Àý´ë ÁÖÀÇ ÇÊ¿ä). '¸Ô´Ù'¿¡¼­´Â '¸Ô-', '¿¹»Ú´Ù'¿¡¼­´Â '¿¹»Ú-'°¡ ¾î±ÙÀÌ µÇ´Â °ÍÀÌÁö¿ä. '±ú²ýÇÏ´Ù'ÀÇ °æ¿ì´Â ±× ¾î°£ÀÌ '±ú²ýÇÏ-'ÀÌÁö¸¸ ¾î±ÙÀº '±ú²ý'ÀÌ µË´Ï´Ù. ±×·¡¼­ ¹Ù·Î À§¿¡ °ýÈ£ ¼Ó ¸»À» ³²±ä °ÍÀÌ°í¿ä. ¾î°£Àº ¹Ù·Î µÚ¿¡ ¼³¸íÇÕ´Ï´Ù.
+
+ 
+
+7) ¾î°£
+
+  ¿ë¾ðÀº È°¿ëÀÌ¶ó´Â °ÍÀ» ÇÕ´Ï´Ù. '¾î°£'°ú '¾î¹Ì'¸¦ ¾Ë±â À§ÇØ¼­´Â ¸ÕÀú 'È°¿ë'À» ¾Ë¾Æ¾ß ÇÏÁö¿ä. 'È°¿ë'ÀÌ¶õ ½±°Ô »ý°¢ÇØ¼­ '¿ë¾ð'ÀÇ ÇüÅÂ º¯È­ÀÔ´Ï´Ù. ±×·¸°Ô ÇüÅÂ¸¦ º¯È­½ÃÅ³ ¶§¿¡, Áï È°¿ëÇÒ ¶§¿¡ º¯ÇÏÁö ¾Ê´Â ºÎºÐÀÌ '¾î°£', º¯ÇÏ´Â ºÎºÐÀÌ '¾î¹Ì'ÀÔ´Ï´Ù.
+
+  '¸Ô´Ù'ÀÇ °æ¿ì '¸Ô°í', '¸ÔÀ¸´Ï', '¸Ô¾î¼­' µîÀ¸·Î È°¿ëÇÕ´Ï´Ù. º¯ÇÏÁö ¾ÊÀº ºÎºÐ '¸Ô-'ÀÌ ¾î°£ÀÌ µÇ¸ç, º¯ÇÑ ºÎºÐ '-´Ù', '-°í', '-À¸´Ï', '-¾î¼­' µîÀÌ ¾î¹Ì°¡ µË´Ï´Ù.
+
+  '¿¹»Ú´Ù'´Â '¿¹»Ú°í', '¿¹»Ú´Ï', '¿¹»µ¼­' µîÀ¸·Î È°¿ëÇÕ´Ï´Ù. ±×·¯¹Ç·Î '¿¹»Ú-'°¡ ¾î°£, '-´Ù', '-°í', '-´Ï', '-¾î¼­' µîÀÌ ¾î¹Ì°¡ µË´Ï´Ù. ¿©±â¼­ '¿¹»µ¼­'´Â Á¶±Ý ´Ù¸£Áö ¾Ê´À³Ä°í ÇÒ ¼öµµ ÀÖ½À´Ï´Ù. ±×·¯³ª ÀÌ°ÍÀº ±ÔÄ¢ È°¿ëÀÔ´Ï´Ù. ¹°·Ð ºÒ±ÔÄ¢ È°¿ëÀÌ¶ó´Â °Íµµ ÀÖ½À´Ï´Ù. ±âÈ¸°¡ µÇ¸é ¼³¸í µå¸®°Ú½À´Ï´Ù.
+
+ 
+
+8) ¾î¹Ì
+
+  À§¿¡¼­ ¾î°£°ú ÇÔ²² ¼³¸í µå·È½À´Ï´Ù.
+
+ 
+
+
+9) °üÇü¾î
+
+  Ã¼¾ðÀ¸·Î ÀÌ·ç¾îÁø ¹®Àå¼ººÐÀ» ²Ù¹Ì´Â ¹®Àå¼ººÐÀÔ´Ï´Ù.
+
+  "³ª´Â ÂøÇÑ »ç¶÷À» ÁÁ¾ÆÇÑ´Ù."¶ó´Â ¹®Àå¿¡¼­ 'ÂøÇÑ'ÀÇ Ç°»ç´Â Çü¿ë»çÀÔ´Ï´Ù. ±×¸®°í ¹®Àå¼ººÐ»óÀ¸·Î´Â '»ç¶÷À»'(¸í»ç·Î ÀÌ·ç¾îÁø ¸ñÀû¾î. Áï, Ã¼¾ðÀ¸·Î ÀÌ·ç¾îÁø ¹®Àå¼ººÐ)À» ²Ù¹Ì´Â °üÇü¾î°¡ µË´Ï´Ù.
+
+ 
+
+
+
+ÃâÃ³: http://searcher.tistory.com/445 [ºû°ú¼Ò±Ý(http://searcher.tistory.com)]
