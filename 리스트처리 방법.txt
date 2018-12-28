@@ -1,0 +1,73 @@
+º¤ÅÍ mÀ» ¸®Æ®Æ®·Î ÀüÈ¯
+
+c()Àº º¤ÅÍ, list()´Â ¸®½ºÆ® ÀÌ´Ù. ¸®½ºÆ®´Â º¤ÅÍÀÌ±âµµ ÇÏ´Ù.
+
+m <- c("a", "b", "c")
+g <- list()
+for(i in 1:length(m)){g[[i]] <- m[i]}
+g
+
+
+docs <- 
+    c("»ç¶ûÀº ´ÞÄÞÇÑ ²ÉÀÌ³ª ±×°ÍÀ» µû±â À§ÇØ¼­´Â 
+
+      ¹«¼­¿î º­¶û ³¡±îÁö °¥ ¿ë±â°¡ ÀÖ¾î¾ß ÇÑ´Ù.", 
+    "Áø½ÇÇÑ »ç¶ûÀÇ ½ÇÃ¼´Â ¹ÏÀ½ÀÌ´Ù.",
+    "´«¹°Àº ´«µ¿ÀÚ·Î ¸»ÇÏ´Â °í°áÇÑ ¾ð¾î.",
+    "Ä£±¸¶õ µÎ »ç¶÷ÀÇ ½ÅÃ¼¿¡ »ç´Â ÇÏ³ªÀÇ ¿µÈ¥ÀÌ´Ù.",
+    "Èå¸£´Â °­¹°À» ÀâÀ»¼ö ¾ø´Ù¸é, ¹Ù´Ù°¡ µÇ¾î¼­ ±â´Ù·Á¶ó.",
+    "¹ÏÀ½ ¼Ò¸Á »ç¶û ±×Áß¿¡ Á¦ÀÏÀº »ç¶ûÀÌ¶ó.",
+    "°¡Àå ¼ÒÁßÇÑ »ç¶÷Àº °¡Àå »ç¶ûÇÏ´Â »ç¶÷ÀÌ´Ù.",
+    "»ç¶û »ç¶û »ç¶û")
+
+vcorpus ÇÔ¼ö·Î º¯È¯ÇÏ¸é ¿©·¯ÁÙÀÌ »ý±æ ¼ö µµ ÀÖ´Ù.
+
+doc_list <- list()
+for(i in 1:length(docs)){doc_list[[i]] <- docs[i]}
+doc_list
+
+gsub("\n", "", doc_list[[1]]) # Enter Key¸¦ ¾ø¾Ø´Ù. ±×·¯³ª È­ÀÌÆ®½ºÆäÀÌ½º´Â ¾ø¾îÁöÁö ¾Ê´Â´ã¤¤
+
+
+# ÇüÅÂ¼Ò ÃßÃâÀ» ½ÃµµÇÑ´Ù. ÇüÅÂ¼Ò¸¦ ÃßÃâÇÏ¸é °¢ ¸®½ºÆ®°¡ º¤ÅÍ·Î ÀüÈ¯µÇ¾î ÇüÅÂ¼Ò ÃßÃâÈÄ¿¡ 
+  ´Ù½Ã ¸®½ºÆ®·Î ÀüÈ¯½ÃÄÑ¾ß ÇÑ´Ù.
+
+ words.nc <- function(doc){
+    doc <- as.character(doc)
+    doc2 <- paste(SimplePos22(doc))
+    doc3 <- str_match(doc2, "([°¡-ÆR]+)/[NP]")
+    doc4 <- doc3[,2]
+    doc4[!is.na(doc4)]
+ }
+
+doc_form <- list()
+
+for(i in 1:length(doc_list)) { doc_form[[i]] <- words.nc(doc_list[[i]])}
+
+doc_cor <- VCorpus(VectorSource(doc_form))
+
+## doc_cor[[1]]Àº ÄÁÅÙÆ®°¡ ¾Æ´Ï¶ó meta µ¥ÀÌÅÍ¸¦ º¸¿©ÁØ´Ù. µû¶ó¼­ corpus¸¦ Àû¿ëÇÑ
+°æ¿ì¿¡´Â doc_cor[[1]]$content·Î Á¢±ÙÇØ¾ß ÇÑ´Ù.
+
+## °ø¹éÀ¸·Î ´Ü¾î¸¦ ±¸ºÐÇÏ°í"scan", 2°³ ÀÌ»óÀ¸·Î ±¸¼ºµÈ ´Ü¾î¸¦ ¼±ÅÃÇÑ´Ù 
+doc_tdm <- TermDocumentMatrix(doc_cor, control=list(tokenize="scan", wordLengths=c(2, 7)))
+
+wordFreq <- slam::row_sums(doc_tdm)
+wordFreq <- sort(wordFreq, decreasing=TRUE)
+
+## »õ·Î¿î ±âºÐÀ¸·Î ÇÙ½É´Ü¾î¸¦ ÃßÃâÇÏ°í ´Ü¾î ÁÖ¸Ó´Ï¸¦ ¸¸µç´Ù.
+
+tds1 <- weightTfIdf(doc_tdm)
+wordFreq <- slam::row_sums(tds1)
+wordFreq <- sort(wordFreq, decreasing=TRUE)
+basic_term1 <- names(wordFreq[wordFreq > 0.5])
+
+tds <- doc_tdm[Terms(doc_tdm) %in% basic_term1,] 
+
+## ¹®¼­°£ÀÇ ¿¬°ü°ü°è¸¦ Ã£´Â´Ù.
+
+m2 <-t(as.matrix(doc_tdm))
+distMatrix <- dist(scale(m2))
+fit <- hclust(distMatrix, method = "ward.D")
+plot(fit, xlab="", sub="", main="clustering keywords")
+rect.hclust(fit, k = 7)

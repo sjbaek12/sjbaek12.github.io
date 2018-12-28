@@ -1,0 +1,47 @@
+신용분류  SVM 1000개 데이타셋 분류 __> 데이터 필드값이 모두 체워져 있다.
+신경망을 통한 모델은 불안정한 부분이 많아서, 실패할 경우 size 수르 변경하여 실행한다.
+그리고 분류하고자 하는 대상의 생플 수가 균형이 맞아야 한다,
+
+credit은 총 1000개의 샘플로 구성된다.
+
+
+credit <- read.csv("http://freakonometrics.free.fr/german_credit.csv", header=TRUE)
+str(credit)
+summary(credit)
+
+credit$Creditability <- ifelse(credit$Creditability==1,"good", "bad")
+bad <- credit[credit$Creditability == "bad",]  # bad는 총 300개 샘플이다.
+
+## good도 300개 샘플을 뽑는다.
+good <- credit[credit$Creditability == "good",] 
+good_t <- good[1:300,]
+
+data_set <- rbind(bad, good_t) # row를 합친다.
+data_set$Creditability <- as.factor(data_set$Creditability)
+summary(data_set)
+str(data_set)
+
+
+library(caret)
+set.seed(600)
+intrain <- createDataPartition(y=data_set$Creditability, p=0.7, list=FALSE) 
+train <- data_set[intrain,]  ## train는 총 420개 샘플이다.
+test <- data_set[-intrain,]  ## test는 총 180개 샘플이다.
+
+
+library(nnet)
+
+m <- nnet(Creditability~., data=train, size=11) # 은익노드가 11개(입력변수 20개, 은익 10개, 출력 1개)
+table(train$Creditability, predict(m, data=train, type = "class"))
+table(test$Creditability, predict(m, newdata=test, type = "class"))
+
+library(devtools)
+
+source_url('https://gist.githubusercontent.com/Peque/41a9e20d6687f2f3108d/raw/85e14f3a292e126f1454864427e3a189c2fe33f3/nnet_plot_update.r')
+
+plot.nnet(m)
+
+## 전체 데이터에 적용--- 
+
+credit$Creditability <- as.factor(credit$Creditability)
+table(credit$Creditability, predict(m, newdata=credit, type="class"))

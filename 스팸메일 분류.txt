@@ -1,0 +1,61 @@
+http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/
+이곳에서 SMS spam Collection이라는 파일을 받은후 csv로 변환을 시켜줄 것이다. 
+구글 시트를 통해 csv로 변환을 시켜주고 sms_spam.csv라는 이름을 지어주자.
+
+
+
+sms_raw <- read.csv(file.choose(), header = TRUE,  stringsAsFactors = FALSE)
+str(sms_raw)
+sms_raw$type <- factor(sms_raw$type)
+library(tm)
+sms_corpus <- VCorpus(VectorSource(sms_raw$text))
+print(sms_corpus)
+lapply(sms_corpus[1:2], as.character)
+sms_corpus_clean <- tm_map(sms_corpus, content_transformer(tolower))
+as.character(sms_corpus[[1]])
+as.character(sms_corpus_clean[[1]])
+sms_corpus_clean <- tm_map(sms_corpus_clean, removeNumbers)
+sms_corpus_clean <- tm_map(sms_corpus_clean, removeWords, stopwords())
+sms_corpus_clean <- tm_map(sms_corpus_clean, removePunctuation)
+library(SnowballC) ## 영어 형태소
+wordStem(c("learn","learned", "learning", "learns")) ## 어근 추출 예시
+sms_corpus_clean <- tm_map(sms_corpus_clean, stemDocument) ## 텍스트 전체에 어근 추출 적용
+sms_corpus_clean <- tm_map(sms_corpus_clean, stripWhitespace)
+sms_dtm <- DocumentTermMatrix(sms_corpus_clean)
+sms_dtm_train <- sms_dtm[1:4169,]
+sms_dtm_test <- sms_dtm[4170:5574,]
+sms_train_labels <- sms_raw[1:4169, ]$type
+sms_test_labels <- sms_raw[4170:5574, ]$type
+prop.table(table(sms_train_labels))
+prop.table(table(sms_test_labels))
+
+library(wordcloud)
+wordcloud(sms_corpus_clean, min.freq = 50, random.order = FALSE)
+spam <- subset(sms_raw ,type == "spam")
+ham <- subset(sms_raw, type == "ham")
+wordcloud(spam$text, max.words = 40, scale = c(3, 0.5))
+wordcloud(ham$text, max.words = 40, scale = c(3, 0.5))
+
+
+sms_freq_words <- findFreqTerms(sms_dtm_train, 5) # 최소 5회이상 출현 단어
+str(sms_freq_words)  ## 총 1158개의 단어가 5회 이상 출현한다.
+
+sms_dtm_freq_train <- sms_dtm_train[ , sms_freq_words] # 빈출단어가 출현하는 DTM
+sms_dtm_freq_test <- sms_dtm_test[ , sms_freq_words]
+
+convert_counts <- function(x) {
+ x <- ifelse(x > 0, "Yes", "No")
+ }              # x가 0보다 크면 "Y", 작으면 "No"
+
+sms_train <- apply(sms_dtm_freq_train, MARGIN = 2, convert_counts)
+sms_test <- apply(sms_dtm_freq_test, MARGIN = 2, convert_counts)
+
+library(e1071)
+sms_classifier <- naiveBayes(sms_train, sms_train_labels)  # 나이브 베이진 함수 활용
+sms_test_pred <- predict(sms_classifier, sms_test)
+sms_test_pred <- predict(sms_classifier, sms_test)
+
+library(gmodels)
+> CrossTable(sms_test_pred, sms_test_labels,
+         prob.chisq = FALSE, prop.t = FALSE, prop.r = FALSE,
+         dnn = c('predicted', 'actual'))

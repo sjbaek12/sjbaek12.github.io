@@ -1,0 +1,172 @@
+http://search.etnews.com/etnews/search.php?category=CATEGORY1&kwd=%EB%B8%94%EB%A1%9D%EC%B2%B4%EC%9D%B8&pageSize=10&reSrchFlag=false&sort=1&startDate=&endDate=&sitegubun=&jisikgubun=&preKwd%5B0%5D=%EB%B8%94%EB%A1%9D%EC%B2%B4%EC%9D%B8&pageNum=1
+
+> basic_url <- "http://search.etnews.com/etnews/search.php?category=CATEGORY1&kwd=%EB%B8%94%EB%A1%9D%EC%B2%B4%EC%9D%B8&pageSize=10&reSrchFlag=false&sort=1&startDate=&endDate=&sitegubun=&jisikgubun=&preKwd%5B0%5D=%EB%B8%94%EB%A1%9D%EC%B2%B4%EC%9D%B8&pageNum="
+
+> library(tm)
+> library(rvest)
+> library(KoNLP)
+
+urls <- NULL
+
+for(x in 0:19){
+   urls[x+1] <- paste0(basic_url, x*1)
+   }
+
+
+links <- NULL
+for(url in urls) { html <- read_html(url)
+  html2 <- html_nodes(html, '.list_news')
+  html3 <- html_nodes(html2, 'a')
+  html4 <- html_attr(html3, 'href')
+  links <- c(links, html4)}
+
+links <- unique(links)
+
+txt <- NULL
+
+for(link in links){
+    html <- read_html(link)
+    html1 <- html_nodes(html, '.article_body')
+    tt <- html_nodes(html1, 'p')
+    y <- NULL
+    a <- NULL
+    for (t in tt){ a <- html_text(t)
+       y <- paste (y, a)}
+    txt <- c(txt, y)} 
+
+
+write.csv(txt, "blockchain.txt")
+
+
+#### 여기까지가 기사 크롤링을 통해서 한개의 파일로 기사들을 모으는 작업 #######
+
+setwd("C:/Users/07941/Documents/block")  ### 워킹 디렉토리를 바꾼다.
+
+
+for(i in seq_along(txt)){write.csv(txt[i], paste0(i, "block.txt"))}  ## 파일을 여러개의 파일로 쪼갠다.   
+
+### 여기부터 텍스트 마이닝 시작 ####
+
+> plans <- VCorpus(DirSource("C:/users/07941/Documents/block", pattern="txt")) 
+
+## 각 plans[[1]]은 여러줄로 되어 있어서 한줄로 변환이 필요하다.
+
+> for(i in seq_along(plans)){
+  plans[[i]]$content <- paste(plans[[i]]$content, collapse=" ")}
+
+> plans <- tm_map(plans, removePunctuation)
+
+> plans = tm_map(plans, removeNumbers)
+
+> plans = tm_map(plans, stripWhitespace)
+
+> for(plan in plans){plan <- gsub("[[:punct:]]", "", plan)} ### 특수문자 제거
+
+> for(i in seq_along(plans)){
+ nouns <- extractNoun(plans[[i]]$content)
+ nouns <- nouns[nchar(nouns) > 2]
+ plans[[i]]$content <- paste(nouns, collapse=" ")
+ }
+
+> ## tokenize = scan은 공백으로 단어를 분리시키는 방법이다.
+
+> wordFreq <- slam::row_sums(plan_tdm)
+
+> wordFreq <- sort(wordFreq, decreasing=TRUE)
+
+
+
+###### 이하는 Keyword를 파악하기위한 전략이다.
+
+
+# 출현이 빈번한 단어를 찾는다. (최소 30회 이상 출현)
+
+basic_term <- findFreqTerms(TermDocumentMatrix(plans), lowfreq=30)
+
+위의 결과를 실행하면
+    블록체인, aws, ico, iot, 거래소, 공개sw, 금융산업, 거래소,비트코인, 사물인터넷iot, 생태계, 스마트시티, 스타트업, 이더리움
+     
+
+## 중요 단어 추출 ### 특정기사에 출현빈도가 높으나 다른 기사에서는 출현빈도가 낮은 단어를 찾는다.
+
+tds1 <- weightTfIdf(plan_tdm)
+wordFreq <- slam::row_sums(tds1)
+wordFreq <- sort(wordFreq, decreasing=TRUE)
+basic_term1 <- names(wordFreq[wordFreq > 0.5])                 # TF-IDF 점수가 0.5 이상인 것만 추출하여 이하의 작업을 하면 된다.
+
+
+
+## 빈번단어와 중요단어를 합친다.
+basic_term <- c(basic_term, basic_term1)
+basic_term <- unique(basic_term)
+
+## 제거할 단어를 고르고 삭제한다.
+>  kst <- c("하이라이트", "△〃", "있다", "ua" , "위한", "있는", "다양한", "관련", "밝혔다", "말했다", "후오비" , 
+"지난", "대한", "함께" , "있도록", "등을","계획이다", "전문기자" , "기자", "것”이라고", "분야" , "이날" , "기존",
+"주요",  "것으로" , "가능한",  "자체", "열린다", "통해","주제로", "대표는" ,"이번", "위해", "관계자는",
+"길재식" , "새로운" , "블록체인을","강조했다", "같은", "것이", "것이다","기반으로", "기술을","기술이","다른", 
+ "모든" , "사업을" ,"실제", "아니라","예정이다", "올해", "이를", "이어", "전문" , "전자신문인터넷", "정보를","중이다", 
+"최근" , "통한","특히" ,  "하는", "한다"  ,  "한편",  "현재" )
+
+> rm_words <- paste(kst, collapse = '|')
+> for(i in seq_along(basic_term)){
+  basic_term[i] <- stringr::str_replace_all(basic_term[i], rm_words, " ")
+  }
+> basic_term <- basic_term[-grep(" ", basic_term)]
+
+.
+# 선택한 단어를 가지고 말뭉치인 tds를 다시 정의한다. 
+
+W1 <- basic_term
+tds <- plan_tdm[Terms(plan_tdm) %in% W1,]     
+
+
+## 워드클라우드를 만든다
+
+> wordFreq <- slam::row_sums(tds)
+> library(wordcloud)
+> pal <- brewer.pal(8,"Dark2")
+> wordcloud(words=W1, freq=wordFreq,
+           min.freq=3, random.order=F,
+           random.color=T, colors=pal)
+
+### 군집분석을 한다.
+m2 <- as.matrix(tds)
+> colnames(m2) <- gsub(".txt", "", colnames(m2))
+> distMatrix <- dist(scale(m2))
+> fit <- hclust(distMatrix, method = "ward.D")
+> plot(fit, xlab="", sub="", main="clustering keywords")
+> rect.hclust(fit, k = 4)
+
+
+
+## 이미 알고 있는 단어와 연관성이 높은 단어를 찾는다. 아래는 해당단어와 상관관계가 최하 0.5인 단어를 찾는다. 
+
+findAssocs(plan_tdm, c("블록체인", "암호화폐", "마이닝", "플랫폼", "핀테크", "보안"), 0.5)
+
+위의 결과를 실행하면 
+   암호화폐---> 거래소, 가입자, 규제, 없계 
+   마이닝 ---> 루마이나, 나이지리아, 러시아, 소수, 채굴, 
+   핀테크 ---> 금융, 비식별조치, 금융위원회, 규제, 스타트업
+   보안 ---> 권한, 스마트폰, 스마트카, 
+
+## 상관관계가 높은 단어를 다시 포함시킨다.
+basic_term1 <- c("블록체인", "암호화폐", "마이닝", "플랫폼", "핀테크", "보안", "비식별조치", "거래소", 
+"가입자", "규제", "금융", "금융위원회", "규제", "스타트업")
+> basic_term <- c(basic_term, basic_term1)
+> basic_term <- unique(basic_term)
+
+
+
+              
+
+
+## 삭제어 
+
+stopwords <- c("하이라이트", "△〃")  
+
+wordFreq1 <- wordFreq1[(!(names(wordFreq1) %in% stopwords))]
+
+## 삭제어
+
+w1 <- w1[-grep("열린다", w1)]                 # w1에서 불필요한 단어 리스트를 삭제한다

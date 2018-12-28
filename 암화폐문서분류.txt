@@ -1,0 +1,132 @@
+library(tm)
+library(KoNLP)
+setwd("C:/Users/07941/Documents/class/c1")
+eths <- VCorpus(DirSource("C:/users/07941/Documents/class/c1", pattern="txt"))
+setwd("C:/Users/07941/Documents/class/p1")
+bits <- VCorpus(DirSource("C:/users/07941/Documents/class/p1", pattern="txt"))
+
+for(i in seq_along(eths)){
+eths[[i]]$content <- paste(eths[[i]]$content, collapse=" ")}
+
+for(i in seq_along(bits)){
+bits[[i]]$content <- paste(bits[[i]]$content, collapse=" ")}
+
+
+bits <- tm_map(bits , removePunctuation)
+eths <- tm_map(eths , removePunctuation)
+
+eths_dtm <- DocumentTermMatrix(eths)
+bits_dtm <- DocumentTermMatrix(bits)
+eth_bit <- c(eths_dtm,bits_dtm)
+
+
+eth_bit_df <- cbind (
+ as.data.frame (as.matrix (eth_bit)),
+ LABEL =c(rep("이더리움",5) , rep("비트코인",5)))
+
+str( eth_bit_df$LABEL )
+
+library ( rpart )
+
+m <- rpart(LABEL~., data=eth_bit_df)
+
+--------------------- 대안으로 ---------------
+
+for(i in seq_along(eths)){
+    nouns <- extractNoun(eths[[i]]$content)
+    nouns <- nouns[nchar(nouns) > 2]
+    eths[[i]]$content <- paste(nouns, collapse=" ")
+ }
+
+for(i in seq_along(bits)){
+    nouns <- extractNoun(bits[[i]]$content)
+    nouns <- nouns[nchar(nouns) > 2]
+    bits[[i]]$content <- paste(nouns, collapse=" ")
+ }
+
+eths_dtm <- DocumentTermMatrix(eths)
+bits_dtm <- DocumentTermMatrix(bits)
+eth_bit <- c(eths_dtm,bits_dtm)
+
+
+eth_bit_df <- cbind (
+ as.data.frame (as.matrix (eth_bit)),
+ LABEL =c(rep("이더리움",5) , rep("비트코인",5)))
+
+
+--------------------- 대안으로 -------------------------------------------------------
+setwd("C:/Users/07941/Documents/class/c1")
+eths <- VCorpus(DirSource("C:/users/07941/Documents/class/c1", pattern="txt"))
+setwd("C:/Users/07941/Documents/class/p1")
+bits <- VCorpus(DirSource("C:/users/07941/Documents/class/p1", pattern="txt"))
+
+for(i in seq_along(eths)){
+eths[[i]]$content <- paste(eths[[i]]$content, collapse=" ")}
+
+for(i in seq_along(bits)){
+bits[[i]]$content <- paste(bits[[i]]$content, collapse=" ")}
+
+
+bits <- tm_map(bits , removePunctuation)
+eths <- tm_map(eths , removePunctuation)
+
+
+
+for(i in seq_along(eths)){
+    nouns <- extractNoun(eths[[i]]$content)
+    nouns <- nouns[nchar(nouns) > 2]
+    eths[[i]]$content <- paste(nouns, collapse=" ")
+ }
+
+eths <- tm_map(eths, removePunctuation)
+eths = tm_map(eths, removeNumbers)
+eths= tm_map(eths, stripWhitespace)
+
+for(i in seq_along(bits)){
+    nouns <- extractNoun(bits[[i]]$content)
+    nouns <- nouns[nchar(nouns) > 2]
+    bits[[i]]$content <- paste(nouns, collapse=" ")
+ }
+
+bits <- tm_map(bits, removePunctuation)
+bits = tm_map(bits, removeNumbers)
+bits= tm_map(bits, stripWhitespace)
+
+tds_eth <- weightTfIdf(TermDocumentMatrix(eths))
+wordFreq_eth <- slam::row_sums(tds_eth)
+wordFreq_eth <- sort(wordFreq_eth, decreasing=TRUE)
+term_eth <- names(wordFreq_eth[wordFreq_eth > 0.1]) 
+
+## term-eth를 확인한 후 Keywordf를 잦아 넣는다.
+
+term_eth <- c("유통량", "프로젝트", "스마트", "트레이딩", "암호화", "플렛폼", "컨센시스", "데이터")
+
+
+### 비트코인 파일도 동일 작업을 진행한다.
+
+tds_bit <- weightTfIdf(TermDocumentMatrix(bits))
+wordFreq_bit <- slam::row_sums(tds_bit)
+wordFreq_bit <- sort(wordFreq_bit, decreasing=TRUE)
+term_bit <- names(wordFreq_bit[wordFreq_bit > 0.1])
+
+
+## term-bit를 확인한 후 Keywordf를 잦아 넣는다.
+
+term_bit <- c("채굴업자", "공과금", "btc", "마이닝", "암호화", "리스크", "기부금")
+
+
+## data frame 파일을 합치고, 구분자 삽입한다.
+
+
+term <- c(term_eth, term_bit)
+tds_eth <- TermDocumentMatrix(eths)
+tds_bit <- TermDocumentMatrix(bits)
+eth_bit <- c(tds_eth,tds_bit)
+
+eth_bit <- eth_bit[Terms(eth_bit) %in% term,]
+eth_bit_df <- as.data.frame(t(as.matrix(eth_bit)))
+
+LABEL <- c(rep("이더리움", 5), rep("비트코인", 5))
+eth_bit_df <- data.frame(eth_bit_df, LABEL) 
+
+m <- rpart(LABEL~., data=eth_bit_df, method="class")

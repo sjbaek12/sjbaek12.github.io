@@ -1,0 +1,71 @@
+
+   번호 고객명 구매항목
+1     1 홍길동   새우깡
+2     2 홍길동   맛동산
+3     3 홍길동     맥주
+4     4 일지매     짱구
+5     5 일지매   감자깡
+6     6 강감찬   감자깡
+7     7 강감찬   새우깡
+8     8 전우치   자갈치
+9     9 전우치   맛동산
+10   10 홍길동     짱구
+11   11 어우동   코코낫
+12   12 어우동   맛동산
+13   13 강감찬   포카칩
+14   14 강감찬     맥주
+15   15 김유신   자갈치
+16   16 김유신     짱구
+17   17 김유신   맛동산
+18   18 홍길동   맛동산
+19   19 전우치   초코칩
+20   20 강감찬     산도
+
+
+
+install.packages("arules") 
+library(arules)
+
+buyer <- read.csv(file.choose(), as.is=T)
+
+buyer$구매항목[buyer$고객명 == '홍길동'] ## 구매항목 검색
+
+buyer.목록 <- split(buyer$구매항목, buyer$고객명) ## 고객별로 구매항목을 추출/리스트 구성
+buyer.목록
+
+
+buyer.목록 <- sapply(buyer.목록, unique) # 중복 구매 항목을 제거
+buyer.tran <- as(buyer.목록,"transactions") # as 함수로 데이터를 클래스로 만든다.
+summary(buyer.tran)
+itemFrequency(buyer.tran)
+itemFrequencyPlot(buyer.tran, support = 0.01) # 지지도, 빈도가 0.01 이상 아이템
+itemFrequencyPlot(buyer.tran, topN = 5)
+
+# arules 패키지가 제공하는 apriori() 함수를 이용하여 연관 규칙을 생성해 보자.
+# apriori() 함수는 최소 지지도에 의해 가지치기를 하는 알고리즘을 이용한다.
+
+buyer.rules <- apriori(buyer.tran)
+summary(buyer.rules)
+
+
+#####
+s(X-->Y) = support = n(X^Y) / N = 전체 건수 중에서 X와 Y가 모두 포함되어 있는 건수의 비
+( 지지도 = X와 Y가 동시에 포함된 거래수 / 전체 거래수 )
+
+위 예제에서 전체 거래건수는 6건이다. (거래당사자 기준)
+
+c(X --> Y) = confidence = n(X^Y) / n(X) = 항목 X를 포함하는 건수 중에서 X와 Y를 모두 포함하
+는 건수의 비
+(신뢰도 = X와 Y를 동시에 포함하는 거래수 / X 를 포함하는 거래수 )
+
+향상도 (lift) = 연관규칙의 신뢰도/지지도 = c(X→Y) / s(Y)
+1이면 서로 독립 관계 , 1 보다 적으면 음의 상관관계 , 1보다 크면 양의 상관 관계 의미
+
+inspect(buyer.rules) ## 규칙을 산출한다.
+
+buyer.rules <- apriori(buyer.tran, parameter = list(support = 0.2, confidence = 0.2)) # 일정이상 규칙
+
+inspect(sort(buyer.rules,by = "lift")[1:5]) # lift 가 높은 순으로 정렬해서 1-5위 까지 출력
+inspect(sort(buyer.rules , by = "lift",decreasing = FALSE)[1:5]) # lift 가 낮은 순으로 정렬
+rule_subset <- subset(buyer.rules, items %in% c("맛동산", "짱구"))
+inspect(rule_subset[1:5])

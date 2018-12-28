@@ -1,0 +1,63 @@
+신용분류  SVM 1000개 데이타셋 분류 __> 데이터 필드값이 모두 체워져 있다.
+
+credit <- read.csv("http://freakonometrics.free.fr/german_credit.csv", header=TRUE)
+credit$Creditability <- as.factor(credit$Creditability) 
+str(credit)
+
+library(caret)
+set.seed(1000)
+intrain <- createDataPartition(y=credit$Creditability, p=0.7, list=FALSE) # 반환되는 인자가 List이면 FALSE
+train <- credit[intrain,]
+test <- credit[-intrain,]
+
+library("e1071")
+
+
+# kerneㅣ 조정인자 튜닝
+  cost는 오차허용, gamma는 kernel 관련 수치로 kernel이 radial로 설정될때 값을 조정하고,
+  만약, kernel이 linear이면 cost값만 조정한다.kerneldms linear, radial, polynomial 이 될 수 있다. 
+
+result <- tune.svm(Creditability~., data=train, gamma=2^(-5:0), cost=2^(0.4), kernel="radial")
+result1 <- tune.svm(Creditability~., data=train, cost=2^(0.4), kernel="linear")
+result2 <- tune.svm(Creditability~., data=train, cost=2^(0.4), degree=2:4,  kernel="polynomia")
+
+## 적정 gamma, cost값을 확인한다.
+
+result$best.parameters
+result1$best.parameters
+result2$best.parameters
+
+## 적정값은 아래와 같다.
+
+    gamma     cost
+   0.03125 1.319508
+> result1$best.parameters
+              cost
+            1.319508
+ result2$best.parameters
+  degree     cost
+    3      1.319508
+
+german_svm <- svm(Creditability~., data=train, gamma = 0.03125, cost=1, kernel="radial")
+
+german_svm1 <- svm(Creditability~., data=train, cost=4, kernel="linear")
+
+german_svm2 <- svm(Creditability~., data=train, cost=16, degree=3, kernel="polynomia")
+
+summary(german_svm)
+summary(german_svm1)
+summary(german_svm2)
+
+## 몇번째 관찰값이 서포트백트인지 확인한다.
+
+german_svm$index
+german_svm1$index
+german_svm2$index
+
+german_svm_predict <- predict(german_svm, test)
+german_svm_predict1 <- predict(german_svm1, test)
+german_svm_predict2 <- predict(german_svm2, test)
+
+confusionMatrix(german_svm_predict, test$Creditability)
+confusionMatrix(german_svm_predict1, test$Creditability)
+confusionMatrix(german_svm_predict2, test$Creditability)
