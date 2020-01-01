@@ -1,0 +1,344 @@
+{% extends "layout.html" %}
+
+<head>
+
+{% block style %}
+
+
+<style>
+
+
+
+td {
+  vertical-align: top;
+}
+
+ #confirm {
+            display: none;
+            background-color: #F5FFFA;
+            opacity : 0.95;
+            filter : alpha(opacity=95);
+            border: 1px solid #aaa;
+            position: fixed;
+            width: 300px;
+            left: 40%;
+            top : 10%;
+            margin-left: -100px;
+            padding: 6px 8px 8px;
+            box-sizing: border-box;
+            text-align: center;
+         }
+
+ #confirm button {
+            background-color: lavender;
+            display: inline-block;
+            border-radius: 5px;
+            border: 1px solid #aaa;
+            padding: 5px;
+            text-align: center;
+            width: 80px;
+            cursor: pointer;
+         }
+  #confirm .message {
+            text-align: left;
+         }
+
+
+</style>
+
+
+{% endblock %}
+
+</head>
+
+<body>
+
+{% block body %}
+
+  <script>
+
+  var applist_baek = {{ applist_baek | tojson | safe }};
+  var applist_kim = {{ applist_kim | tojson | safe }};
+
+ // 모바일에서는 click tap touchstart, 그냥 웹에서는 click으로 한다.
+
+
+    $(document).ready(function(){
+      $('span').on('click touchstart', function(){
+      var time = $(this).attr('class');
+      var x = document.createElement("FORM");
+      x.setAttribute("id", "myform");
+      x.setAttribute("action", "{{ url_for('index') }}");
+      x.setAttribute("method", "post");
+      document.body.appendChild(x);
+
+      var y = document.createElement("INPUT");
+      y.setAttribute("type", "text");
+      y.setAttribute("name", "name");
+      y.setAttribute("value", time);
+
+      var z = document.createElement("INPUT");
+      z.setAttribute("type", "submit");
+      z.setAttribute("value", "submit");
+
+      document.getElementById("myform").appendChild(y);
+      document.getElementById("myform").appendChild(z);
+      document.getElementById("myform").submit();
+    });
+    });
+
+    function gfunc() {
+           var now = new Date();
+           var year = now.getFullYear();
+           var month = now.getMonth();
+           var day = now.getDate();
+           //alert(year + "." + month + 1 + "." + day); // month는 0부터 시작하기 때문에 +1을 해야됨
+
+           //해당 달의 1일은 무슨 요일이냐
+           var setDate = new Date(year, month, 1);
+           var yoil = setDate.getDay();
+           //alert(yoil); // 일:0, 월:1 ~ 토:6
+
+           var nalsu = new Array(31,28,31,30,31,30,31,31,30,31,30,31);
+
+           //2월은 윤년 체크
+           if(year % 4 == 0 && year % 100 == 0 || year % 400 === 0 ){
+            nalsu[1] = 28; } else { nalsu[1] = 29;}
+
+          Calendarlist(yoil, nalsu, year, month);
+          //Calendarlist함수는 이번달 요일, 날수, 이번달-1, 금년을 인자로 넣는다
+          document.getElementById("disp").innerHTML = strs;
+          istoday();
+
+      }
+
+      var strs= "";
+      var str="";
+      var counter = 0;
+
+     function Calendarlist(yoil, nalsu, year, month){
+
+         for(var t=0; t<14; t++){
+
+                //이번달 t=0를 기준으로 달이 증가할때 마다 해가 바뀌는지 체크한다. check_year가 달력의 year이다.
+                check_year = Math.floor(month+t)/12;
+                // 이번달 t=0를 기준으로 달을 변경시킨다. check_month가 달력에 나타나는 해당 달이다.
+                check_month = (month+t) % 12;
+
+                //달력에 나타나는 해당 달의 1일은 무슨 요일이냐
+                var setDate = new Date(year+check_year, check_month, 1);
+                var yoil = setDate.getDay();
+                //alert(yoil); // 일:0, 월:1 ~ 토:6
+
+                makeCalendar(yoil, nalsu[check_month], Math.floor(year+check_year), check_month+1);
+                //1월의 값이 0이므로 check_month는 1을 더해 준다. 그리고 달별로 달력을 만든다.
+
+          }
+        }
+
+
+
+   function makeCalendar(yoil, nalsu, year, month, day) {
+       str = "<table border ='0'>";
+       str += "<tr><th colspan='7' width='400'>" + "<span class='myear'>" + Math.floor(year) + "</span>" + "년" +
+       "<span class='mmonth'>" + month + "</span>" + "월</th></tr>";
+       str += "<tr>";
+       var week = new Array("일", "월", "화", "수", "목", "금", "토");
+       for(var i = 0; i < week.length; i++){
+            str += "<th width='14%'>" + week[i] + "</th>";
+       }
+       str += "</tr>";
+
+       // 날 수 채우기
+       var no = 1;
+       var currentCell = 0;
+       var ju = Math.ceil((nalsu + yoil) / 7);
+
+
+
+       //alert("이번달은 " + ju + " 주 동안 계속됩니다");
+       for(var r=0; r < ju; r++){
+            str += "<tr style='text-align:center; height:80px;'>";
+            for(var col=0; col < 7; col++){
+              if(currentCell < yoil || no > nalsu){
+                str += "<td>&nbsp;</td>";
+                currentCell++; }
+
+              else{
+
+              if(isnotEmpty(year, month, no, applist_baek) && isnotEmpty(year, month, no, applist_kim)){
+                str += "<td>" + "<span class=" + Math.floor(year) + "." + month + "." + no + ">" + no + "</span>" + "<br>" +
+                  "<a href='javascript:void(0)'; onclick='appfunc("+ year + "," + month + "," + no + "," + 1 + ")'; return false;>승재</a>"
+                  + "<br>" +
+                  "<a href='javascript:void(0)'; onclick='appfunc("+ year + "," + month + "," + no + "," + 2 +")'; return false;>현희</a>"
+                  + "</td>"; no++;}
+              else if(isnotEmpty(year, month, no, applist_baek) && !(isnotEmpty(year, month, no, applist_kim))){
+                str += "<td>" + "<span class=" + Math.floor(year) + "." + month + "." + no + ">" + no + "</span>" + "<br>" +
+                  "<a href='javascript:void(0)'; onclick='appfunc("+ year + "," + month + "," + no + "," + 1 + ")'; return false;>승재</a>"
+                  + "<br>" +"</td>"; no++;}
+              else if(!(isnotEmpty(year, month, no, applist_baek)) && isnotEmpty(year, month, no, applist_kim)){
+                str += "<td>" + "<span class=" + Math.floor(year) + "." + month + "." + no + ">" + no + "</span>" + "<br>" +
+                  "<a href='javascript:void(0)'; onclick='appfunc("+ year + "," + month + "," + no + "," + 2 +")'; return false;>현희</a>"
+                  + "<br>" + "</td>"; no++;}
+              else{str += "<td>" + "<span class=" + Math.floor(year) + "." + month + "." + no + ">" + no + "</span>" + "<br>" + "<br>" + "</td>"; no++;}
+
+            }
+          }
+
+            str += "<td>&nbsp;</td>";
+
+            str += "</tr>";
+       }
+
+         str += "</table>" + "<br>" + "<br>";
+
+      strs += str;
+    }
+
+
+  function isnotEmpty(y,m,d, myObj){
+    if(y in myObj){
+      if(m in myObj[y]){
+        if(d in myObj[y][m]) {return true;}
+        else {return false }}
+      else {return false }}
+    else return false;}
+
+
+    function istoday(){
+      var now = new Date();
+      var year = now.getFullYear();
+      var month = now.getMonth() + 1;
+      var day = now.getDate();
+
+      var this_day = year + "." + month + "." + day;
+
+     var mains = document.getElementsByClassName(this_day);
+     mains[0].style = "width:100Px; height:100Px; border:2px solid Coral; background-color:Coral; color:white; border-radius:30%; text-align:center; line-height:15px" }
+
+    function functionConfirm(text, this_is_yes, this_is_no, cancel_it) {
+       var confirmation_box = $("#confirm");
+       confirmation_box.find(".message").text(text);
+       confirmation_box.find(".yes,.no,.cancel").unbind().click(function() {
+       confirmation_box.hide();
+            });
+      confirmation_box.find(".yes").click(this_is_yes);
+      confirmation_box.find(".no").click(this_is_no);
+      confirmation_box.find(".cancel").click(cancel_it);
+      confirmation_box.show();
+         }
+
+
+         function appfunc(year, month, no, name){
+         if (name == 1) { var event = applist_baek[year][month][no];} else { var event = applist_kim[year][month][no];};
+         var ment = year + "년" + month + "월" + no + "일:\n" + " \n" + event + " \n" + " \n";
+         functionConfirm(ment, function yes(){ },
+                   function modify() {  var mod_app = prompt("수정 내용을 입력하세요", event);
+                   if (mod_app != null) { rebookfunc(year, month, no, name, mod_app);} },
+                 function cancel(){ cancelfunc(year, month, no, name) });
+         };
+
+
+
+
+
+// 약속을 취소 삭제한다
+
+      function cancelfunc(year, month, no, name){
+           var time = year + "." + month + "." + no ;
+           if (name == 1) { var name = '승재님';} else { var name = '현희님';};
+           var x = document.createElement("FORM");
+
+           x.setAttribute("id", "cancelform");
+           x.setAttribute("action", "{{ url_for('cancel') }}");
+           x.setAttribute("method", "post");
+           document.body.appendChild(x);
+
+           var y = document.createElement("INPUT");
+           y.setAttribute("type", "text");
+           y.setAttribute("name", "name");
+           y.setAttribute("value", name);
+
+           var w = document.createElement("INPUT");
+           w.setAttribute("type", "text");
+           w.setAttribute("name", "time");
+           w.setAttribute("value", time);
+
+           var z = document.createElement("INPUT");
+           z.setAttribute("type", "submit");
+           z.setAttribute("value", "submit");
+           document.getElementById("cancelform").appendChild(y);
+           document.getElementById("cancelform").appendChild(w);
+           document.getElementById("cancelform").appendChild(z);
+           document.getElementById("cancelform").submit();
+          };
+
+  // 약속 수정 사항을 update 한다
+
+          function rebookfunc(year, month, no, name, mod_app){
+           var atime = year + "." + month + "." + no ;
+           if (name == 1) { var name = '승재님';} else { var name = '현희님';};
+
+           var x = document.createElement("FORM");
+           x.setAttribute("id", "rebooking");
+           x.setAttribute("action", "{{ url_for('update') }}");
+           x.setAttribute("method", "post");
+           document.body.appendChild(x);
+
+           var y = document.createElement("INPUT");
+           y.setAttribute("type", "text");
+           y.setAttribute("name", "name");
+           y.setAttribute("value", name);
+
+           var w = document.createElement("INPUT");
+           w.setAttribute("type", "text");
+           w.setAttribute("name", "time");
+           w.setAttribute("value", atime);
+
+           var k = document.createElement("INPUT");
+           k.setAttribute("type", "text");
+           k.setAttribute("name", "appointment");
+           k.setAttribute("value", mod_app);
+
+           var z = document.createElement("INPUT");
+           z.setAttribute("type", "submit");
+           z.setAttribute("value", "submit");
+
+           document.getElementById("rebooking").appendChild(y);
+           document.getElementById("rebooking").appendChild(w);
+           document.getElementById("rebooking").appendChild(k);
+           document.getElementById("rebooking").appendChild(z);
+           document.getElementById("rebooking").submit();
+          };
+
+
+
+
+
+  </script>
+
+     <body onload="gfunc()">
+
+     <header>
+      <p id="headtitle">시작</p>
+     </header>
+
+      <br>
+       <div id="confirm">
+         <div class="message" style = "white-space: pre-line"></div>
+            <button class="yes">확인</button>
+            <button class="no">수정</button>
+            <button class="cancel">삭제</button>
+        </div>
+      <br>
+     <div id="disp"></div>
+
+     <br>
+     <br>
+
+
+{% endblock %}
+
+
+
+</body>
